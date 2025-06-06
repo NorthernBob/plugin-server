@@ -39,6 +39,13 @@ jobs:
             tags: |
               type=raw,value=latest
   
+        - name: Set up Docker Buildx (with docker-container driver)
+          uses: docker/setup-buildx-action@v3
+          with:
+            driver: docker-container
+            install: true
+            use: true
+
         - name: Login to Docker Registry
           uses: docker/login-action@v3
           with:
@@ -48,19 +55,11 @@ jobs:
   
         - name: Build Docker Image and Push
           run: |
-            BUILT_IMAGE=""
-            readarray -t IMAGES <<< "${{ steps.docker-meta.outputs.tags }}"
-            for image in ${IMAGES[@]}; do
-              echo "Building and pushing image: $image"
-              if [ "$BUILT_IMAGE" == "" ]; then
-                docker buildx build \
-                  --platform linux/amd64,linux/arm64 \
-                  -t "$image" \
-                  -f Dockerfile \
-                  --push \
-                  .
-                BUILT_IMAGE="$image"
-              else
-                docker buildx imagetools create "$BUILT_IMAGE" --tag "$image"
+            docker buildx build \
+                --platform linux/amd64,linux/arm64 \
+                -t ${{ steps.docker-meta.outputs.tags }} \
+                -f Dockerfile \
+                --push \
+                .
               fi
             done
