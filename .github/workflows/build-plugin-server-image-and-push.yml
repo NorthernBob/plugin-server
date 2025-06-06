@@ -61,5 +61,3 @@ jobs:
                 -f Dockerfile \
                 --push \
                 .
-              fi
-            done
