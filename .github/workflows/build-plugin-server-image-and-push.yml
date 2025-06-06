@@ -1,0 +1,66 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-plugin-server-image:
+      runs-on: ubuntu-latest
+      environment:
+        name: image-registry-plugin-server
+      env:
+        PLUGIN_SERVER_IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY || 'higress-registry.cn-hangzhou.cr.aliyuncs.com' }}
+        PLUGIN_SERVER_IMAGE_NAME: ${{ vars.PLUGIN_SERVER_IMAGE_NAME || 'higress/plugin-server' }}
+      steps:
+        - name: "Checkout ${{ github.ref }}"
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 1
+  
+        - name: Free Up GitHub Actions Ubuntu Runner Disk Space 🔧
+          uses: jlumbroso/free-disk-space@main
+          with:
+            tool-cache: false
+            android: true
+            dotnet: true
+            haskell: true
+            large-packages: true
+            swap-storage: true
+  
+        - name: Calculate Docker metadata
+          id: docker-meta
+          uses: docker/metadata-action@v5
+          with:
+            images: |
+              ${{ env.PLUGIN_SERVER_IMAGE_REGISTRY }}/${{ env.PLUGIN_SERVER_IMAGE_NAME }}
+            tags: |
+              type=raw,value=latest
+  
+        - name: Login to Docker Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ${{ env.PLUGIN_SERVER_IMAGE_REGISTRY }}
+            username: ${{ secrets.REGISTRY_USERNAME }}
+            password: ${{ secrets.REGISTRY_PASSWORD }}
+  
+        - name: Build Docker Image and Push
+          run: |
+            BUILT_IMAGE=""
+            readarray -t IMAGES <<< "${{ steps.docker-meta.outputs.tags }}"
+            for image in ${IMAGES[@]}; do
+              echo "Building and pushing image: $image"
+              if [ "$BUILT_IMAGE" == "" ]; then
+                docker buildx build \
+                  --platform linux/amd64,linux/arm64 \
+                  -t "$image" \
+                  -f Dockerfile \
+                  --push \
+                  .
+                BUILT_IMAGE="$image"
+              else
+                docker buildx imagetools create "$BUILT_IMAGE" --tag "$image"
+              fi
+            done
