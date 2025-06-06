@@ -12,8 +12,8 @@ jobs:
       environment:
         name: image-registry-plugin-server
       env:
-        PLUGIN_SERVER_IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY || 'higress-registry.cn-hangzhou.cr.aliyuncs.com' }}
-        PLUGIN_SERVER_IMAGE_NAME: ${{ vars.PLUGIN_SERVER_IMAGE_NAME || 'higress/plugin-server' }}
+        PLUGIN_SERVER_IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY || 'registry.cn-shanghai.aliyuncs.com' }}
+        PLUGIN_SERVER_IMAGE_NAME: ${{ vars.PLUGIN_SERVER_IMAGE_NAME || 'daofeng/higress-plugin-server' }}
       steps:
         - name: "Checkout ${{ github.ref }}"
           uses: actions/checkout@v4
@@ -30,21 +30,21 @@ jobs:
             large-packages: true
             swap-storage: true
   
-        - name: Calculate Docker metadata
-          id: docker-meta
-          uses: docker/metadata-action@v5
-          with:
-            images: |
-              ${{ env.PLUGIN_SERVER_IMAGE_REGISTRY }}/${{ env.PLUGIN_SERVER_IMAGE_NAME }}
-            tags: |
-              type=raw,value=latest
+        # - name: Calculate Docker metadata
+        #   id: docker-meta
+        #   uses: docker/metadata-action@v5
+        #   with:
+        #     images: |
+        #       ${{ env.PLUGIN_SERVER_IMAGE_REGISTRY }}/${{ env.PLUGIN_SERVER_IMAGE_NAME }}
+        #     tags: |
+        #       type=raw,value=latest
   
-        - name: Login to Docker Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ${{ env.PLUGIN_SERVER_IMAGE_REGISTRY }}
-            username: ${{ secrets.REGISTRY_USERNAME }}
-            password: ${{ secrets.REGISTRY_PASSWORD }}
+        # - name: Login to Docker Registry
+        #   uses: docker/login-action@v3
+        #   with:
+        #     registry: ${{ env.PLUGIN_SERVER_IMAGE_REGISTRY }}
+        #     username: ${{ secrets.REGISTRY_USERNAME }}
+        #     password: ${{ secrets.REGISTRY_PASSWORD }}
   
         - name: Build Docker Image and Push
           run: |
